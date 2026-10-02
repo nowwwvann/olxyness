@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OLXYNESS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class'}</script>
+<script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans">
+
+<!-- LOGIN -->
+<section id="login" class="min-h-screen flex flex-col items-center justify-center p-4">
+  <form id="lf" class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 space-y-4">
+    <h1 class="text-3xl font-black tracking-tight text-center text-indigo-500">OLXYNESS</h1>
+    <p class="text-center font-semibold">ENTER YOUR PERFORM</p>
+    <label class="block text-sm">USERNAME :
+      <input id="u" required autocomplete="off" class="mt-1 w-full rounded-lg border dark:border-slate-700 dark:bg-slate-800 p-3" placeholder="Nama lengkap"></label>
+    <label class="block text-sm">CODE :
+      <input id="c" required type="password" inputmode="numeric" class="mt-1 w-full rounded-lg border dark:border-slate-700 dark:bg-slate-800 p-3" placeholder="***"></label>
+    <p id="err" class="text-red-500 text-sm hidden"></p>
+    <button class="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold p-3">Masuk</button>
+  </form>
+  <p class="mt-6 text-xs text-slate-500">© 2026 VANNERST. All rights reserved.</p>
+</section>
+
+<!-- APP -->
+<div id="app" class="hidden h-screen flex">
+  <aside id="side" class="fixed md:static inset-y-0 left-0 z-20 w-72 -translate-x-full md:translate-x-0 transition bg-white dark:bg-slate-900 border-r dark:border-slate-800 flex flex-col">
+    <div class="p-4 flex items-center justify-between">
+      <span class="text-xl font-black text-indigo-500">OLXYNESS</span>
+      <button id="theme" class="text-sm px-2 py-1 rounded bg-slate-200 dark:bg-slate-800">🌓</button>
+    </div>
+    <div class="px-4 text-xs font-semibold text-slate-500">SALURAN</div>
+    <nav id="chs" class="p-2 space-y-1"></nav>
+    <div class="px-4 mt-2 text-xs font-semibold text-slate-500">ONLINE (<span id="oc">0</span>)</div>
+    <ul id="mem" class="flex-1 overflow-y-auto p-2 space-y-1 text-sm"></ul>
+    <div class="p-3 border-t dark:border-slate-800 text-sm">
+      <div id="me" class="font-semibold truncate"></div>
+      <button data-v="status" class="nav mt-2 w-full rounded-lg bg-pink-500 text-white py-2">+ Update status</button>
+      <p class="mt-3 text-[11px] text-slate-500 text-center">© 2026 VANNERST</p>
+    </div>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 px-3 flex items-center gap-2 bg-white dark:bg-slate-900 border-b dark:border-slate-800">
+      <button id="burger" class="md:hidden text-xl">☰</button>
+      <h2 id="title" class="font-bold flex-1 truncate"># umum</h2>
+      <button data-v="lobby" class="nav px-3 py-1 rounded-lg text-sm bg-slate-200 dark:bg-slate-800">Lobby</button>
+      <button data-v="chat" class="nav px-3 py-1 rounded-lg text-sm bg-slate-200 dark:bg-slate-800">Chat</button>
+      <button id="vbtn" class="px-3 py-1 rounded-lg text-sm bg-green-600 text-white">📹 Video</button>
+      <button data-v="arch" class="nav px-3 py-1 rounded-lg text-sm bg-slate-200 dark:bg-slate-800 hidden sm:block">Arsitektur</button>
+    </header>
+
+    <!-- Lobby -->
+    <section id="v-lobby" class="view flex-1 overflow-y-auto p-6">
+      <h3 class="text-2xl font-bold mb-1">Halo, <span id="hi"></span> 👋</h3>
+      <p class="text-slate-500 mb-4">Pilih saluran atau mulai video call grup.</p>
+      <div id="rooms" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      <button id="vbtn2" class="mt-6 rounded-xl bg-green-600 text-white px-5 py-3 font-semibold">Mulai / gabung video call grup</button>
+      <h4 class="mt-8 font-semibold">Status terbaru</h4>
+      <div id="stories-mini" class="flex gap-3 overflow-x-auto py-2"></div>
+    </section>
+
+    <!-- Chat -->
+    <section id="v-chat" class="view hidden flex-1 flex flex-col min-h-0">
+      <div id="msgs" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+      <form id="cf" class="p-3 flex gap-2 bg-white dark:bg-slate-900 border-t dark:border-slate-800">
+        <input id="ci" autocomplete="off" placeholder="Tulis pesan…" class="flex-1 rounded-lg border dark:border-slate-700 dark:bg-slate-800 p-3">
+        <button class="rounded-lg bg-indigo-600 text-white px-5">Kirim</button>
+      </form>
+    </section>
+
+    <!-- Video -->
+    <section id="v-video" class="view hidden flex-1 flex flex-col bg-black min-h-0">
+      <div id="grid" class="flex-1 grid gap-2 p-2 auto-rows-fr grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 overflow-auto"></div>
+      <div class="p-3 flex justify-center gap-3 bg-slate-900">
+        <button id="mic" class="rounded-full bg-slate-700 text-white px-5 py-2">🎤 Mic</button>
+        <button id="cam" class="rounded-full bg-slate-700 text-white px-5 py-2">📷 Kamera</button>
+        <button id="end" class="rounded-full bg-red-600 text-white px-5 py-2">Keluar</button>
+      </div>
+    </section>
+
+    <!-- Status -->
+    <section id="v-status" class="view hidden flex-1 overflow-y-auto p-6">
+      <h3 class="text-xl font-bold mb-3">Status (hilang setelah 24 jam)</h3>
+      <form id="sf" class="flex flex-wrap gap-2 mb-6">
+        <input id="st" maxlength="200" placeholder="Apa yang sedang kamu pikirkan?" class="flex-1 min-w-[200px] rounded-lg border dark:border-slate-700 dark:bg-slate-800 p-3">
+        <input id="sb" type="color" value="#6366f1" class="h-12 w-12 rounded">
+        <button class="rounded-lg bg-pink-500 text-white px-5">Bagikan</button>
+      </form>
+      <div id="stories" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+    </section>
+
+    <!-- Arsitektur -->
+    <section id="v-arch" class="view hidden flex-1 overflow-y-auto p-6 max-w-3xl space-y-5 text-sm leading-relaxed">
+      <h3 class="text-2xl font-bold">Panduan arsitektur (skala besar)</h3>
+      <div><h4 class="font-semibold text-indigo-500">1. Media server: pakai SFU</h4>
+        <p>Mesh (seperti versi lokal ini) hanya cocok untuk ±4 orang. Untuk puluhan peserta gunakan <b>SFU</b>: tiap peserta mengunggah 1 stream, server meneruskannya ke peserta lain tanpa decode ulang, sehingga CPU server ringan dan unggahan pengguna tidak membengkak. Rekomendasi: <b>LiveKit</b> (siap pakai, SDK lengkap) atau <b>mediasoup</b> (kontrol penuh, Node.js). Aktifkan <i>simulcast</i> agar peserta berjaringan lemah menerima kualitas lebih rendah. MCU (campur video di server) hanya untuk kebutuhan khusus seperti rekaman/siaran karena sangat berat.</p></div>
+      <div><h4 class="font-semibold text-indigo-500">2. Basis data</h4>
+        <p><b>PostgreSQL</b>: akun, grup, anggota, status. <b>ScyllaDB/Cassandra</b> (atau MongoDB untuk skala menengah): riwayat chat, dipartisi per channel + waktu. <b>Redis</b>: presence online, cache, dan pub/sub agar banyak server Socket.io tersinkron (adapter Redis). <b>S3/MinIO</b>: file dan gambar status. Simpan hash kode login (argon2/bcrypt), jangan teks asli.</p></div>
+      <div><h4 class="font-semibold text-indigo-500">3. Keamanan & E2EE</h4>
+        <p>Wajib HTTPS/WSS. Media WebRTC sudah terenkripsi DTLS-SRTP, tetapi SFU bisa membuka paketnya; untuk E2EE sungguhan gunakan <b>WebRTC Insertable Streams / SFrame</b> dengan kunci grup. Untuk chat: protokol <b>Signal (Double Ratchet)</b> atau <b>MLS</b> untuk grup; server hanya menyimpan ciphertext. Tambahan: token JWT berumur pendek, rate limit login, validasi input, CSP.</p></div>
+      <div><h4 class="font-semibold text-indigo-500">4. Alur signaling WebRTC</h4>
+        <ol class="list-decimal ml-5 space-y-1">
+          <li>Pengguna login, koneksi Socket.io terautentikasi token.</li>
+          <li>Klik Video: browser meminta kamera/mikrofon (<code>getUserMedia</code>).</li>
+          <li>Kirim <code>call:join</code>; server membalas daftar peserta yang sudah ada.</li>
+          <li>Peserta baru membuat <code>RTCPeerConnection</code>, membuat <b>offer</b> (SDP), mengirim via server ke tiap peserta.</li>
+          <li>Penerima membalas <b>answer</b> (SDP); keduanya bertukar <b>ICE candidate</b> melalui server.</li>
+          <li>STUN menemukan alamat publik; jika gagal (NAT ketat) pakai TURN (coturn) sebagai relay.</li>
+          <li>Koneksi P2P terbentuk, <code>ontrack</code> menampilkan video. Dengan SFU, langkah 4–7 dilakukan terhadap server SFU, bukan tiap peserta.</li>
+        </ol></div>
+      <p class="text-xs text-slate-500">© 2026 VANNERST</p>
+    </section>
+  </main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+let sock, me, ch='umum', H={}, local, peers={}, names={}, inCall=false;
+const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
+const hhmm=t=>new Date(t).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+
+// tema
+$('#theme').onclick=()=>document.documentElement.classList.toggle('dark');
+
+// login
+$('#lf').onsubmit=async e=>{
+  e.preventDefault();
+  const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('#u').value,code:$('#c').value})});
+  const d=await r.json();
+  if(!r.ok){$('#err').textContent=d.error;$('#err').classList.remove('hidden');return}
+  sessionStorage.setItem('tk',d.token); start(d.token);
+};
+if(sessionStorage.getItem('tk')) start(sessionStorage.getItem('tk'));
+
+function start(token){
+  sock=io({auth:{token}});
+  sock.on('connect_error',()=>{sessionStorage.clear();location.reload()});
+  sock.on('init',d=>{
+    me=d.name; H=d.history; $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+    $('#me').textContent=me; $('#hi').textContent=me.split(' ')[0];
+    $('#chs').innerHTML=''; $('#rooms').innerHTML='';
+    d.channels.forEach(c=>{
+      const b=el('button','w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800','# '+c); b.onclick=()=>openCh(c); $('#chs').append(b);
+      const k=el('button','text-left p-4 rounded-xl bg-white dark:bg-slate-900 shadow hover:ring-2 ring-indigo-500'); k.append(el('div','font-bold','# '+c),el('div','text-xs text-slate-500',(H[c].length)+' pesan')); k.onclick=()=>openCh(c); $('#rooms').append(k);
+    });
+    stories(d.statuses); show('lobby');
+  });
+  sock.on('members',l=>{$('#oc').textContent=l.length;$('#mem').innerHTML='';l.forEach(n=>{const li=el('li','flex items-center gap-2 px-2 py-1');li.append(el('span','h-2 w-2 rounded-full bg-green-500'),el('span','truncate',n));$('#mem').append(li)})});
+  sock.on('chat',({ch:c,m})=>{H[c].push(m); if(c===ch) addMsg(m)});
+  sock.on('statuses',stories);
+  sock.on('call:peers',async l=>{for(const p of l){names[p.id]=p.name;const pc=mkPC(p.id);const o=await pc.createOffer();await pc.setLocalDescription(o);sock.emit('signal',{to:p.id,data:{sdp:pc.localDescription}})}});
+  sock.on('signal',async({from,name,data})=>{
+    names[from]=name; const pc=peers[from]||mkPC(from);
+    if(data.sdp){await pc.setRemoteDescription(data.sdp); if(data.sdp.type==='offer'){const a=await pc.createAnswer();await pc.setLocalDescription(a);sock.emit('signal',{to:from,data:{sdp:pc.localDescription}})}}
+    else if(data.ice){try{await pc.addIceCandidate(data.ice)}catch{}}
+  });
+  sock.on('call:left',id=>{peers[id]&&peers[id].close();delete peers[id];$('#t'+id)&&$('#t'+id).remove()});
+}
+
+// navigasi
+function show(v){$$('.view').forEach(x=>x.classList.add('hidden'));$('#v-'+v).classList.remove('hidden');$('#side').classList.add('-translate-x-full');if(v==='chat')$('#msgs').scrollTop=1e9}
+$$('.nav').forEach(b=>b.onclick=()=>show(b.dataset.v));
+$('#burger').onclick=()=>$('#side').classList.toggle('-translate-x-full');
+function openCh(c){ch=c;$('#title').textContent='# '+c;$('#msgs').innerHTML='';H[c].forEach(addMsg);show('chat')}
+
+// chat
+function addMsg(m){
+  const mine=m.name===me, d=el('div','flex '+(mine?'justify-end':''));
+  const b=el('div','max-w-[80%] rounded-2xl px-4 py-2 '+(mine?'bg-indigo-600 text-white':'bg-white dark:bg-slate-800'));
+  b.append(el('div','text-xs opacity-70',m.name+' · '+hhmm(m.ts)),el('div','break-words',m.text)); d.append(b); $('#msgs').append(d); $('#msgs').scrollTop=1e9;
+}
+$('#cf').onsubmit=e=>{e.preventDefault();const t=$('#ci').value.trim();if(t)sock.emit('chat',{ch,text:t});$('#ci').value=''};
+
+// status
+function stories(list){
+  ['#stories','#stories-mini'].forEach(id=>{
+    const box=$(id); box.innerHTML=''; if(!list.length) box.append(el('p','text-sm text-slate-500','Belum ada status. Jadilah yang pertama.'));
+    list.slice().reverse().forEach(s=>{
+      const c=el('div',(id==='#stories'?'':'w-40 shrink-0 ')+'rounded-xl p-3 text-white min-h-[120px] flex flex-col justify-between');
+      c.style.background=s.bg; c.append(el('div','font-medium break-words',s.text),el('div','text-xs opacity-80',s.name.split(' ')[0]+' · '+hhmm(s.ts))); box.append(c);
+    });
+  });
+}
+$('#sf').onsubmit=e=>{e.preventDefault();if($('#st').value.trim())sock.emit('status:add',{text:$('#st').value,bg:$('#sb').value});$('#st').value=''};
+
+// video call
+async function joinCall(){
+  show('video');
+  if(inCall) return;
+  try{local=await navigator.mediaDevices.getUserMedia({video:true,audio:true})}
+  catch{alert('Kamera/mikrofon tidak bisa diakses. Gunakan localhost atau HTTPS dan izinkan akses.');show('chat');return}
+  inCall=true; tile('me','Kamu',local,true); sock.emit('call:join');
+}
+function mkPC(id){
+  const pc=peers[id]=new RTCPeerConnection(ICE);
+  local.getTracks().forEach(t=>pc.addTrack(t,local));
+  pc.onicecandidate=e=>e.candidate&&sock.emit('signal',{to:id,data:{ice:e.candidate}});
+  pc.ontrack=e=>tile(id,names[id],e.streams[0]);
+  return pc;
+}
+function tile(id,name,stream,mute){
+  let t=$('#t'+id);
+  if(!t){t=el('div','relative rounded-xl overflow-hidden bg-slate-800');t.id='t'+id;t.append(el('video','w-full h-full object-cover'),el('span','absolute bottom-2 left-2 text-xs bg-black/60 text-white px-2 py-1 rounded',name));$('#grid').append(t)}
+  const v=t.querySelector('video');v.srcObject=stream;v.autoplay=true;v.playsInline=true;v.muted=!!mute;
+}
+function endCall(){
+  sock.emit('call:leave'); Object.values(peers).forEach(p=>p.close()); peers={};
+  local&&local.getTracks().forEach(t=>t.stop()); local=null; inCall=false; $('#grid').innerHTML=''; show('chat');
+}
+$('#vbtn').onclick=$('#vbtn2').onclick=joinCall; $('#end').onclick=endCall;
+$('#mic').onclick=()=>local&&local.getAudioTracks().forEach(t=>t.enabled=!t.enabled);
+$('#cam').onclick=()=>local&&local.getVideoTracks().forEach(t=>t.enabled=!t.enabled);
+</script>
+</body>
+</html>
